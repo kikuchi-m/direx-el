@@ -21,7 +21,7 @@
 
 ;;; Commentary:
 
-;; 
+;;
 
 ;;; Code:
 
@@ -41,7 +41,7 @@
   ""
   :type 'string
   :group 'direx)
-  
+
 (defcustom direx:open-icon "[-]"
   ""
   :type 'string
@@ -423,15 +423,42 @@ mouse-2: find this node in other window"))
                    :name name
                    :full-name dirname)))
 
+(defvar direx:hide-buffer-file t
+  "Indicate whether hide buffer file (like foo.el~) or not.
+If non-nil, hide all buffer files.")
+
+(defvar direx:order t
+  "Indicate whether order children of directory from directories to regular files.")
+
 (defmethod direx:node-children ((dir direx:directory))
-  (loop with dirname = (direx:file-full-name dir)
-        for filename in (directory-files dirname t)
-        for basename = (file-name-nondirectory filename)
-        unless (string-match dired-trivial-filenames basename)
-        if (file-directory-p filename)
-        collect (direx:make-directory filename)
-        else
-        collect (direx:make-regular-file filename)))
+  (let* ((dirname (direx:file-full-name dir))
+         (files
+          (reduce (lambda (l f)
+                    (let ((base (file-name-nondirectory f)))
+                      (if (or (null f)
+                              (string-match dired-trivial-filenames base)
+                              (and direx:hide-buffer-file (string-match "\\~\\'" base)))
+                          l
+                        (cons f l))))
+                  (directory-files dirname t)
+                  :initial-value nil)))
+    (cond
+     (direx:order
+      (defun direx:collect-ordered (dirs regs l)
+        (if (null l) (append dirs regs)
+          (let ((f (car l)) (rest (cdr l)))
+            (if (file-directory-p f)
+                (direx:collect-ordered (cons (direx:make-directory f) dirs) regs rest)
+              (direx:collect-ordered dirs (cons (direx:make-regular-file f) regs) rest)))))
+      (direx:collect-ordered nil nil files))
+     (t (reduce
+         (lambda (l f)
+                (cons (if (file-directory-p f)
+                          (direx:make-directory f)
+                        (direx:make-regular-file f))
+                      l))
+         files
+         :initial-value nil)))))
 
 (defmethod direx:node-contains ((dir direx:directory) file)
   (and (typep file 'direx:file)
