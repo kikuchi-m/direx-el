@@ -430,6 +430,10 @@ If non-nil, hide all buffer files.")
 (defvar direx:order t
   "Indicate whether order children of directory from directories to regular files.")
 
+(defvar direx:exclude-files
+  '("\\.emacs\\.desktop\\.lock\\'" "\\.emacs\\.desktop\\'")
+  "List of file pattern not to show in directory tree.")
+
 (defmethod direx:node-children ((dir direx:directory))
   (let* ((dirname (direx:file-full-name dir))
          (files
@@ -437,7 +441,12 @@ If non-nil, hide all buffer files.")
                     (let ((base (file-name-nondirectory f)))
                       (if (or (null f)
                               (string-match dired-trivial-filenames base)
-                              (and direx:hide-buffer-file (string-match "\\~\\'" base)))
+                              (and direx:hide-buffer-file (string-match "\\~\\'" base))
+                              (loop with match = nil
+                                    for pattern in direx:exclude-files
+                                    while (not match)
+                                    if (string-match pattern base) do (setq match t)
+                                    finally return match))
                           l
                         (cons f l))))
                   (directory-files dirname t)
