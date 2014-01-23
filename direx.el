@@ -424,7 +424,7 @@ mouse-2: find this node in other window"))
                    :full-name dirname)))
 
 (defvar direx:hide-buffer-file t
-  "Indicate whether hide buffer file (like foo.el~) or not.
+  "Indicate whether hide auto-save file and version file or not.
 If non-nil, hide all buffer files.")
 
 (defvar direx:order t
@@ -441,7 +441,7 @@ If non-nil, hide all buffer files.")
                     (let ((base (file-name-nondirectory f)))
                       (if (or (null f)
                               (string-match dired-trivial-filenames base)
-                              (and direx:hide-buffer-file (string-match "\\~\\'" base))
+                              (and direx:hide-buffer-file (string-match "\\(\\~\\'\\|^\\.#\\)" base))
                               (loop with match = nil
                                     for pattern in direx:exclude-files
                                     while (not match)
