@@ -801,6 +801,22 @@ If non-nil, hide all buffer files.")
   (setq item (or item (direx:item-at-point!)))
   (direx:generic-find-item item t))
 
+(defun direx:find-item-new (&optional item)
+  (interactive)
+  (let* ((current (or item (direx:item-at-point!)))
+         (dir (if (direx:item-node-p current) current
+                (direx:item-parent current)))
+         (buf (current-buffer)))
+    (message "%s" (direx:canonical-dirname (direx:item-name dir)))
+    (set-buffer
+     (switch-to-buffer
+      (find-file
+       (read-file-name "New file: "
+                       (direx:canonical-dirname (direx:item-name dir))))))
+    (save-buffer)
+    (set-buffer buf)
+    (direx:item-refresh dir)))
+
 (defun direx:display-item (&optional item)
   "Open ITEM at point without changing focus."
   (interactive)
@@ -876,6 +892,7 @@ If non-nil, hide all buffer files.")
     (define-key map (kbd "o")           'direx:find-item-other-window)
     (define-key map (kbd "C-o")         'direx:display-item)
     (define-key map (kbd "RET")         'direx:maybe-find-item)
+    (define-key map (kbd "N")           'direx:find-item-new)
     (define-key map (kbd "TAB")         'direx:toggle-item)
     (define-key map (kbd "i")           'direx:toggle-item)
     (define-key map (kbd "E")           'direx:expand-item-recursively)
